@@ -3,6 +3,8 @@ name: Build samples
 on:
   push:
   pull_request:
+  # Lets CI be re-run by hand from the Actions tab
+  workflow_dispatch:
 
 jobs:
   build-native-components:
