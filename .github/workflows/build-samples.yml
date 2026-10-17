@@ -10,7 +10,7 @@ jobs:
   build-native-components:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v4
       with:
         submodules: recursive
 
@@ -51,7 +51,7 @@ jobs:
       run: find ${{github.workspace}}/build/
 
     - name: Upload artifacts
-      uses: actions/upload-artifact@v2
+      uses: actions/upload-artifact@v4
       with:
         name: tv-native-apis-samples
         path: |
