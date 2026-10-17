@@ -10,8 +10,8 @@ typedef struct DILE_OUTPUTDEVICE_STATE_T
     uint8_t enabled;
     uint8_t freezed;
     uint8_t appliedPQ;
-    uint8_t unknown;
-    uint32_t framerate;
+    uint8_t unknown; // padding
+    uint32_t framerate; // framerateDivide in LG's header
 } DILE_OUTPUTDEVICE_STATE;
 
 typedef enum DILE_VT_DUMP_LOCATION_TYPE_T
@@ -63,7 +63,7 @@ typedef struct DILE_VT_FRAMEBUFFER_CAPABILITY_T
 typedef struct DILE_VT_VIDEO_FRAME_OUTPUT_DEVICE_LIMITATION_T
 {
     DILE_VT_RECT maxResolution;
-    uint8_t unk;
+    uint8_t unk; // bLeftTopAlign in LG's header
     uint8_t supportInputVideoDeInterlacing;
     uint8_t supportDisplayVideoDeInterlacing;
     uint8_t supportScaleUp;
@@ -86,17 +86,35 @@ typedef enum DILE_VT_VIDEO_FRAME_OUTPUT_DEVICE_STATE_FLAGS_T
     DILE_VT_VIDEO_FRAME_OUTPUT_DEVICE_STATE_FRAMERATE_DIVIDE = 0x10,
 } DILE_VT_VIDEO_FRAME_OUTPUT_DEVICE_STATE_FLAGS_T;
 
+/*
+ * Signatures follow LG's own dile_vt.h (webOS 5 sysroot from LG Open Source,
+ * mirrored in webosbrew/webos-userland) and were checked against libdile_vt
+ * on webOS 3.5. Functions that older firmware lacks are weak.
+ */
+
+// Per-process setup; DILE_VT_Create/Destroy already do this through HAL_VT_Init/Finalize
+int DILE_VT_Init(void) __attribute__((weak));
+int DILE_VT_InitEx(unsigned int bufferNum) __attribute__((weak));
+// Also undoes the HAL_VT_Init of a DILE_VT_Create that failed part way
+int DILE_VT_Finalize(void) __attribute__((weak));
+
 DILE_VT_HANDLE DILE_VT_Create(unsigned int videoWindowId);
 DILE_VT_HANDLE DILE_VT_CreateEx(unsigned int videoWindowId, int bufferNum) __attribute__((weak));
-int DILE_VT_Start(DILE_VT_HANDLE);
-int DILE_VT_Stop(DILE_VT_HANDLE);
+
+/*
+ * Not capture start/stop: a lock (SysV semaphore with SEM_UNDO) shared by all
+ * processes using VT, to be held while reading video memory. pWaitTime is the
+ * maximum wait in ms, or NULL for libdile_vt's default.
+ */
+int DILE_VT_Start(unsigned int *pWaitTime);
+int DILE_VT_Stop(void);
 int DILE_VT_GetVideoFrameOutputDeviceDumpLocation(DILE_VT_HANDLE, int *pDumpLocation);
 int DILE_VT_SetVideoFrameOutputDeviceDumpLocation(DILE_VT_HANDLE, int pDumpLocation);
 int DILE_VT_SetVideoFrameOutputDeviceState(DILE_VT_HANDLE, uint32_t stateFlags, DILE_OUTPUTDEVICE_STATE *state);
 int DILE_VT_GetCurrentVideoFrameBufferProperty(DILE_VT_HANDLE, DILE_VT_FRAMEBUFFER_PROPERTY *param_2, uint32_t *pIndexOfCurrentVideoFrameBuffer);
-void DILE_VT_Destroy(DILE_VT_HANDLE);
+int DILE_VT_Destroy(DILE_VT_HANDLE);
 int DILE_VT_SetVideoFrameOutputDeviceOutputRegion(DILE_VT_HANDLE, int pDumpLocation, DILE_VT_RECT* rect);
-int DILE_VT_WaitVsync(DILE_VT_HANDLE, int unk1, int unk2);
+int DILE_VT_WaitVsync(DILE_VT_HANDLE);
 
 int DILE_VT_GetVideoFrameBufferCapability(DILE_VT_HANDLE, DILE_VT_FRAMEBUFFER_CAPABILITY*);
 int DILE_VT_GetAllVideoFrameBufferProperty(DILE_VT_HANDLE, DILE_VT_FRAMEBUFFER_CAPABILITY*, DILE_VT_FRAMEBUFFER_PROPERTY*);
