@@ -135,7 +135,7 @@ int main(int argc, char** argv) {
         fclose(pFile);
         */
 
-        DILE_VT_WaitVsync(vth, 0, 0);
+        DILE_VT_WaitVsync(vth);
 
         output_state.freezed = 1;
         DILE_VT_SetVideoFrameOutputDeviceState(vth, 2, &output_state);
